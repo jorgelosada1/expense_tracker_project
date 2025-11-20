@@ -1,0 +1,74 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta viewport="width=device-width, initial-scale=1.0">
+    <title>{{ titulo|default:"Rastreador de Gastos" }}</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .btn-primary {
+                @apply bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 transition duration-300;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+
+    <nav class="bg-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold text-indigo-600">Rastreador de Finanzas</span>
+                </div>
+                <div class="md:block">
+                    <a href="{% url 'dashboard' %}" class="btn-primary">Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        {% block content %}
+        {% endblock content %}
+    </main>
+
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+    {% if DEBUG %}
+    <script src="{% url 'django_browser_reload:reload' %}"></script>
+    {% endif %}
+
+    <script>
+        document.body.addEventListener("cerrarModal", () => {
+            document.getElementById("modal").classList.add("hidden");
+        });
+    </script>
+
+    <script>
+        document.body.addEventListener("htmx:afterSwap", function (evt) {
+            if (evt.detail.target.id === "modal-body") {
+                document.getElementById("modal").classList.remove("hidden");
+            }
+        });
+    </script>
+
+    <script>
+        document.body.addEventListener("htmx:configRequest", (event) => {
+            const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]")?.value;
+            if (csrfToken) {
+                event.detail.headers["X-CSRFToken"] = csrfToken;
+            }
+        });
+    </script>
+
+</body>
+
+</html>

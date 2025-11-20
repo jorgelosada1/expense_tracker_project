@@ -1,0 +1,128 @@
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+
+    <div id="balance-container" class="bg-indigo-500 text-white p-6 rounded-xl shadow-lg md:col-span-1">
+        <h2 class="text-lg font-semibold mb-2">Balance Total</h2>
+        <p class="text-4xl font-extrabold">{{ balance|default:"$0.00" }}</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow-lg md:col-span-2">
+        <h2 class="text-lg font-semibold mb-4 border-b pb-2">Desglose de Gastos por Categoría</h2>
+        <div class="relative h-64">
+            <canvas id="gastosChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    function dibujarGrafico() {
+        if (typeof Chart === 'undefined') {
+            console.error("Chart.js no está cargado. Verifique base.html");
+            return;
+        }
+
+        const canvas = document.getElementById('gastosChart');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+
+        const labels = JSON.parse('{{ chart_labels|safe }}');
+        const data = JSON.parse('{{ chart_data|safe }}');
+        const colors = JSON.parse('{{ chart_colors|safe }}');
+
+        if (canvas.chartInstance) {
+            canvas.chartInstance.destroy();
+        }
+
+        if (data.length > 0) {
+            canvas.chartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            data: data,
+                            backgroundColor: colors,
+                            hoverOffset: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right' },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    let label = context.label || '';
+                                    if (label) label += ': ';
+                                    if (context.parsed !== null) {
+                                        label += new Intl.NumberFormat('en-US', {
+                                            style: 'currency',
+                                            currency: 'USD'
+                                        }).format(context.parsed);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        } else {
+            canvas.parentNode.innerHTML =
+                '<p class="text-center text-gray-500 py-10">¡Aún no hay gastos registrados como Gasto para analizar!</p>';
+        }
+    }
+
+    dibujarGrafico();
+
+    document.getElementById('dashboard-content')?.addEventListener('htmx:afterSwap', function () {
+        dibujarGrafico();
+    });
+</script>
+
+<div id="transacciones-list" class="bg-white shadow sm:rounded-lg p-6 mt-6">
+    <h2 class="text-2xl font-semibold text-gray-900 mb-4">Transacciones Recientes</h2>
+
+    <div class="grid grid-cols-6 font-bold text-gray-600 border-b pb-2 mb-2">
+        <div class="col-span-2">Descripción</div>
+        <div>Categoría</div>
+        <div>Monto</div>
+        <div>Fecha</div>
+        <div>Acciones</div>
+    </div>
+
+    {% for transaccion in transacciones %}
+    <div class="grid grid-cols-6 py-2 border-b last:border-b-0 hover:bg-gray-50 items-center">
+        <div class="col-span-2 text-gray-800">{{ transaccion.descripcion }}</div>
+        <div class="text-sm text-gray-600">{{ transaccion.categoria.nombre }}</div>
+
+        {% if transaccion.categoria.es_ingreso %}
+        <div class="font-bold text-green-600">${{ transaccion.monto }}</div>
+        {% else %}
+        <div class="font-bold text-red-600">-${{ transaccion.monto }}</div>
+        {% endif %}
+
+        <div class="text-sm text-gray-500">{{ transaccion.fecha|date:"Y-m-d" }}</div>
+
+        <div class="flex space-x-2">
+            <button hx-get="{% url 'editar_transaccion' transaccion.id %}" hx-target="#modal-body" hx-swap="innerHTML"
+                hx-trigger="click" hx-on:click="console.log('HTMX detectó el click')"
+                class="text-blue-500 hover:text-blue-700 text-sm font-semibold">
+                ✏️ Editar
+            </button>
+
+            <button hx-delete="{% url 'eliminar_transaccion' pk=transaccion.pk %}" hx-target="#dashboard-content"
+                hx-swap="none"
+                hx-confirm="¿Estás seguro de que quieres eliminar esta transacción? Esta acción es irreversible."
+                class="text-red-500 hover:text-red-700 text-sm font-semibold">
+                🗑️ Eliminar
+            </button>
+
+        </div>
+    </div>
+    {% empty %}
+    <p class="text-center py-4 text-gray-500 col-span-6">No hay transacciones registradas. ¡Añade una para empezar!</p>
+    {% endfor %}
+</div>
