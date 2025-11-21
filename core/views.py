@@ -1,12 +1,17 @@
 from django.shortcuts import render
 from django.db.models import Sum
-from django.http import HttpResponse 
 from .models import Transaccion, Categoria
 from .forms import TransaccionForm
 from django.http import HttpResponseNotAllowed, HttpResponse
 import json
 import random
+from openpyxl import Workbook
+from .models import Transaccion, Categoria
+import openpyxl
+from .forms import CategoriaForm
+from django.views.decorators.http import require_http_methods
 
+#-------------------------------------------------------------------------------------------
 def _get_finance_data():
     """Calcula el balance y recupera todas las transacciones."""
     transacciones = Transaccion.objects.select_related('categoria').all()
@@ -21,6 +26,8 @@ def _get_finance_data():
     balance_formateado = f"${balance_total:,.2f}"
     
     return transacciones, balance_formateado
+
+#----------------------------------------------------------------------------------------------
 
 def dashboard(request):
 
@@ -118,7 +125,7 @@ def editar_transaccion(request, pk):
     }
     return render(request, 'editar_transaccion_form.html', context)
 
-
+# ----------------------------------------------------------------------------------------------
 
 def _get_chart_data():
     categorias = Categoria.objects.all()
@@ -146,3 +153,41 @@ def _get_chart_data():
         "data": json.dumps(data),
         "colors": json.dumps(colors)
     }
+# -------------------------------------------------------------------------------------------------
+
+def exportar_excel(request):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Transacciones"
+
+    ws.append(["ID", "Descripción", "Monto", "Categoría", "Fecha"])
+
+    for t in Transaccion.objects.select_related("categoria"):
+        ws.append([
+            t.id,
+            t.descripcion,
+            float(t.monto),
+            t.categoria.nombre,
+            t.fecha.strftime("%Y-%m-%d")
+        ])
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="transacciones.xlsx"'
+    wb.save(response)
+    return response
+# --------------------------------------------------------------------------------------------------
+
+def cambiarcategoria(request):
+    if request.method == "POST":
+        form = CategoriaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            response = HttpResponse(status=204)
+            response['HX-Trigger'] = 'categoriaAgregada'  
+            return response
+    else:
+        form = CategoriaForm()
+
+    return render(request, "categoria_form.html", {"form": form})

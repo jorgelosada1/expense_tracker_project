@@ -1,0 +1,25 @@
+<form 
+    method="POST"
+    hx-post="{% url 'cambiarcategoria' %}"
+    hx-trigger="submit"
+    hx-swap="none"
+>
+    {% csrf_token %}
+    <div>
+        {{ form.nombre.label_tag }}
+        {{ form.nombre }}
+    </div>
+    <div>
+        {{ form.es_ingreso.label_tag }}
+        {{ form.es_ingreso }}
+    </div>
+    <div class="flex justify-end space-x-3 mt-6">
+        <button type="button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded"
+                onclick="document.getElementById('modal').classList.add('hidden')">
+            Cancelar
+        </button>
+        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded">
+            Agregar
+        </button>
+    </div>
+</form>

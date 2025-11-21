@@ -22,3 +22,16 @@ class TransaccionForm(forms.ModelForm):
     class Meta:
         model = Transaccion
         fields = ['descripcion', 'monto', 'categoria']
+
+class CategoriaForm(forms.ModelForm):
+    class Meta:
+        model = Categoria
+        fields = ['nombre', 'es_ingreso'] 
+        labels = {
+            'nombre': 'Nombre de la Categoría',
+            'es_ingreso': '¿Es ingreso?'
+        }
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'w-full p-2 border rounded-md', 'placeholder': 'Ej: Comida, Transporte'}),
+            'es_ingreso': forms.CheckboxInput(attrs={'class': 'ml-2'}),
+        }

@@ -26,9 +26,19 @@
                 <div class="flex items-center">
                     <span class="text-xl font-bold text-indigo-600">Rastreador de Finanzas</span>
                 </div>
-                <div class="md:block">
+                <div class="md:flex space-x-3">
                     <a href="{% url 'dashboard' %}" class="btn-primary">Dashboard</a>
+                    <a href="{% url 'exportar_excel' %}"
+                        class="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition duration-300">
+                        Exportar Excel
+                    </a>
                 </div>
+                <div class="absolute left-1/2 transform -translate-x-1/2">
+            <button class="btn-primary" hx-get="{% url 'cambiarcategoria' %}" hx-target="#modal-body"
+                hx-trigger="click">
+                Agregar Categoría
+            </button>
+        </div>
             </div>
         </div>
     </nav>
@@ -36,10 +46,24 @@
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         {% block content %}
         {% endblock content %}
+
+
+        <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+            <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+                <div id="modal-body">
+                </div>
+                <div class="flex justify-end mt-4">
+                    <button type="button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded"
+                        onclick="document.getElementById('modal').classList.add('hidden')">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+        
     </main>
 
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 
     {% if DEBUG %}
@@ -50,22 +74,22 @@
         document.body.addEventListener("cerrarModal", () => {
             document.getElementById("modal").classList.add("hidden");
         });
-    </script>
 
-    <script>
         document.body.addEventListener("htmx:afterSwap", function (evt) {
             if (evt.detail.target.id === "modal-body") {
                 document.getElementById("modal").classList.remove("hidden");
             }
         });
-    </script>
 
-    <script>
         document.body.addEventListener("htmx:configRequest", (event) => {
             const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]")?.value;
             if (csrfToken) {
                 event.detail.headers["X-CSRFToken"] = csrfToken;
             }
+        });
+
+        document.body.addEventListener('categoriaAgregada', () => {
+            location.reload();
         });
     </script>
 
